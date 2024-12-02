@@ -11,3 +11,18 @@ def admin(request):
 
 def generate(request):
     return render(request, 'sentiment/generate.html')
+
+
+
+# Views for the events (event1, event2, etc.)
+def event_1(request):
+    return render(request, 'events/event1.html')
+
+def event_2(request):
+    return render(request, 'events/event2.html')
+
+def event_3(request):
+    return render(request, 'events/event3.html')
+
+def event_4(request):
+    return render(request, 'events/event4.html')
