@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from .views import SentimentAnalysisView
+from .views import SentimentListView
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -12,6 +13,7 @@ urlpatterns = [
     path('event/3/', views.event_3, name='event_3'),
     path('event/4/', views.event_4, name='event_4'),
     path('analyze', SentimentAnalysisView.as_view()),
+    path('list', SentimentListView.as_view()),
     
 
 

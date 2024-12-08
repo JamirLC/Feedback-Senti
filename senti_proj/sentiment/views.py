@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.shortcuts import render
+from .models import Sentiment
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
@@ -32,9 +33,8 @@ def event_4(request):
     return render(request, 'events/event4.html')
 
 
-model = AutoModelForSequenceClassification.from_pretrained('C:\Users\ACER\Desktop\Web\lavalust\Feedback-Senti\senti_proj\sentiment\model')
-tokenizer = AutoTokenizer.from_pretrained('C:\Users\ACER\Desktop\Web\lavalust\Feedback-Senti\senti_proj\sentiment\model')
-
+model = AutoModelForSequenceClassification.from_pretrained('C:\\Users\\ACER\\Downloads\\model-20241201T121004Z-001\\model\\taglish')
+tokenizer = AutoTokenizer.from_pretrained('C:\\Users\\ACER\\Downloads\\model-20241201T121004Z-001\\model\\taglish')
 sentiment_pipeline = pipeline('sentiment-analysis', model=model, tokenizer=tokenizer)
 
 
@@ -45,18 +45,43 @@ class SentimentAnalysisView(APIView):
             return Response({"error": "No text provided"}, status=400)
         
         result = sentiment_pipeline(text)
-        if result[0]["label"] == "LABEL_0":
-            return Response({
-                "sentiment": "Negative",
-                "score": result[0]
-            }, status=200)
-        elif result[0]["label"] == "LABEL_2":
-            return Response({
-                "sentiment": "Positive",
-                "score": result[0]
-            }, status=200)
+        sentiment_label = result[0]["label"]
+        sentiment_score = result[0]["score"]
+
+
+        if sentiment_label == "LABEL_0":
+            sentiment = "Negative"
+        elif sentiment_label == "LABEL_2":
+            sentiment = "Positive"
         else:
-            return Response({
-                "sentiment": "Neutral",
-                "score": result[0]
-            }, status=200)
+            sentiment = "Neutral"
+
+        feedback = Sentiment.objects.create(
+            event="Feedback",
+            text=text,
+            sentiment=sentiment,
+            created_at=None
+        )
+
+        
+
+        return Response({
+            "sentiment": sentiment,
+            "score": sentiment_score
+        }, status=200)
+
+
+class SentimentListView(APIView):
+    def get(self, request, *args, **kwargs):
+        sentiments = Sentiment.objects.all()  
+        data = [
+            {
+                "id": sentiment.id,
+                "event": sentiment.event,
+                "text": sentiment.text,
+                "sentiment": sentiment.sentiment,
+                "created_at": sentiment.created_at
+            }
+            for sentiment in sentiments
+        ]
+        return Response(data)
