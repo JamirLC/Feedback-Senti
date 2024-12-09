@@ -4,6 +4,7 @@ from .models import Sentiment
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
+from django.db.models import Count
 
 # Create your views here.
 # View for the homepage
@@ -33,8 +34,8 @@ def event_4(request):
     return render(request, 'events/event4.html')
 
 
-model = AutoModelForSequenceClassification.from_pretrained('C:\\Users\\ACER\\Downloads\\model-20241201T121004Z-001\\model\\taglish')
-tokenizer = AutoTokenizer.from_pretrained('C:\\Users\\ACER\\Downloads\\model-20241201T121004Z-001\\model\\taglish')
+model = AutoModelForSequenceClassification.from_pretrained(r'D:\VSCODE\Feedback-Senti\model\taglish')
+tokenizer = AutoTokenizer.from_pretrained(r'D:\VSCODE\Feedback-Senti\model\taglish')
 sentiment_pipeline = pipeline('sentiment-analysis', model=model, tokenizer=tokenizer)
 
 
@@ -73,15 +74,23 @@ class SentimentAnalysisView(APIView):
 
 class SentimentListView(APIView):
     def get(self, request, *args, **kwargs):
-        sentiments = Sentiment.objects.all()  
-        data = [
-            {
-                "id": sentiment.id,
-                "event": sentiment.event,
-                "text": sentiment.text,
-                "sentiment": sentiment.sentiment,
-                "created_at": sentiment.created_at
-            }
-            for sentiment in sentiments
-        ]
+        sentiments = Sentiment.objects.all()
+        
+        # Count sentiments
+        sentiment_counts = Sentiment.objects.values('sentiment').annotate(count=Count('sentiment'))
+        sentiment_summary = {item['sentiment']: item['count'] for item in sentiment_counts}
+
+        data = {
+            "sentiments": [
+                {
+                    "id": sentiment.id,
+                    "event": sentiment.event,
+                    "text": sentiment.text,
+                    "sentiment": sentiment.sentiment,
+                    "created_at": sentiment.created_at
+                }
+                for sentiment in sentiments
+            ],
+            "summary": sentiment_summary
+        }
         return Response(data)
